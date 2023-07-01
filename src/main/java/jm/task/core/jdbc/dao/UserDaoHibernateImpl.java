@@ -2,152 +2,107 @@ package jm.task.core.jdbc.dao;
 
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
+import org.hibernate.*;
+import org.hibernate.criterion.Restrictions;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class UserDaoHibernateImpl implements UserDao {
+    private EntityManager entityManager;
     public UserDaoHibernateImpl() {
 
     }
 
     @Override
     public void createUsersTable() {
+        Session session = Util.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
 
-//        String sql = "CREATE TABLE UsersTable IF NOT EXISTS  %s ( id BIGINT not NULL AUTO_INCREMENT, " +
-//                "name VARCHAR(100), " +
-//                "lastName VARCHAR(100), " +
-//                "age TINYINT, PRIMARY KEY ( id ))";
+        String sql = "CREATE TABLE IF NOT EXISTS UsersTable " +
+                "(id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, " +
+                "name VARCHAR(50) NOT NULL, " +
+                "lastName VARCHAR(50) NOT NULL, " +
+                "age INT(30) NOT NULL)";
 
-        Statement statement = null;
-
-        try  {
-            Connection connection = Util.getConnection();
-            System.out.println("Connected database successfully...");
-            statement = connection.createStatement();
-            String sql = "CREATE TABLE IF NOT EXISTS UsersTable" +
-                    "(id INTEGER NOT NULL PRIMARY KEY  AUTO_INCREMENT, " +
-                    " name VARCHAR(255), " +
-                    " lastname VARCHAR(255), " +
-                    " age INTEGER " +
-                    " )";
-            statement.executeUpdate(sql);
-            System.out.println("DataBase is created!");
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("Error create!");
-        }
+        Query query = session.createSQLQuery(sql).addEntity(User.class);
+        query.executeUpdate();
+        transaction.commit();
+        session.close();
+        System.out.println("Table is created!");
     }
 
     @Override
     public void dropUsersTable() {
-        Statement statement = null;
-        try {
-            Connection connection = Util.getConnection();
-            System.out.println("Connected database successfully...");
-            statement = connection.createStatement();
-            String sqlDrop = "DROP TABLE UsersTable";
-            statement.executeUpdate(sqlDrop);
-            System.out.println("DataBase is delete!");
-        } catch (SQLException e) {
-            System.out.println("Error drop");
-            e.printStackTrace();
-        }
+        Session session = Util.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+
+        String sql = "DROP TABLE IF EXISTS UsersTable";
+        Query query = session.createSQLQuery(sql).addEntity(User.class);
+        query.executeUpdate();
+        transaction.commit();
+        session.close();
+        System.out.println("Table is droped!");
 
     }
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
+         User user  = new User();
+         user.setAge(age);
+         user.setName(name);
+         user.setLastName(lastName);
+         Session session = Util.getSessionFactory().openSession();
+         session.beginTransaction();
+         session.save(user);
+        session.getTransaction().commit();
+        session.close();
+        System.out.println("Succsess!");
 
-        //Statement statement = null;
-        //String name1 = null;
-        try  {
-            Connection connection = Util.getConnection();
-            System.out.println("Connected database successfully...");
-            User user = new User(name, lastName, age);
-            String sqlSaveUser = "INSERT INTO UsersTable (name, lastname, age) VALUES (?, ?, ?)";
-            PreparedStatement statement = connection.prepareStatement(sqlSaveUser);
-            statement.setString(1, user.getName());
-            statement.setString(2, user.getLastName());
-            statement.setByte(3, user.getAge());
-
-            int rowsInserted = statement.executeUpdate();
-            if (rowsInserted > 0) {
-                System.out.println("A new user was inserted successfully!");
-            }
-            System.out.println("User is added!");
-        } catch (SQLException e) {
-            System.out.println("Error save");
-            e.printStackTrace();
-        }
     }
 
     @Override
     public void removeUserById(long id) {
-        String sql = "DELETE FROM  UsersTable WHERE id = ?";
-
-        User user = new User();
-        user.setId(id);
-        String strId = Long.toString(user.getId());
-
         try {
-            Connection connection = Util.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, strId);
-
-            preparedStatement.executeUpdate();
-            System.out.println("User is remove!");
-        } catch (SQLException e) {
-            System.out.println("Error remove");
+        Session session = Util.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        User user = (User) session.get(User.class, id);
+        session.delete(user);
+        transaction.commit();
+        System.out.println("User is deleted!");
+    } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+
+
     @Override
     public List<User> getAllUsers() {
-        String sql = "SELECT id, name, lastname, age FROM UsersTable";
-
-        List<User> userList = new ArrayList<>();
-
-        Statement statement = null;
-
-        try (Connection connection = Util.getConnection()) {
-            statement = connection.createStatement();
-
-            ResultSet resultSet = statement.executeQuery(sql);
-
-            while (resultSet.next()) {
-                User user = new User();
-                user.setId(resultSet.getLong("id"));
-                user.setName(resultSet.getString("name"));
-                user.setLastName(resultSet.getString("lastname"));
-                user.setAge(resultSet.getByte("age"));
-
-                userList.add(user);
-            }
-            System.out.println("Get all!");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("Error get all!");
-        }
-        userList.toString();
-        return userList;
+        Session session = Util.getSessionFactory().openSession();
+        System.out.println("Get all");
+        return  session.createQuery("SELECT a FROM User a", User.class).getResultList();
     }
 
     @Override
     public void cleanUsersTable() {
+        Session session = Util.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
         String sql = "DELETE FROM  UsersTable";
 
-
-        try (Connection connection = Util.getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.executeUpdate();
-            System.out.println("Table is clean!");
-        } catch (SQLException e) {
-            System.out.println("Error clean");
-            e.printStackTrace();
-        }
+        Query query = session.createSQLQuery(sql);
+        query.executeUpdate();
+        transaction.commit();
+        session.close();
+        System.out.println("Clean!");
     }
 }
