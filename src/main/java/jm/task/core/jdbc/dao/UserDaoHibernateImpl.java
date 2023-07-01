@@ -132,7 +132,7 @@ public class UserDaoHibernateImpl implements UserDao {
             e.printStackTrace();
             System.out.println("Error get all!");
         }
-
+        userList.toString();
         return userList;
     }
 

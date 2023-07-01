@@ -14,8 +14,8 @@ public class Main {
         usi.saveUser("HH", "LL", (byte) 29);
         usi.removeUserById(4);
         usi.getAllUsers();
-        usi.cleanUsersTable();
-        usi.dropUsersTable();
+ //       usi.cleanUsersTable();
+  //      usi.dropUsersTable();
 
     }
 }
