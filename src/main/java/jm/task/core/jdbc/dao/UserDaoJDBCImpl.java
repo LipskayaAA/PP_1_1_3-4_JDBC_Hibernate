@@ -12,7 +12,7 @@ public class UserDaoJDBCImpl implements UserDao {
 
     }
 
-    public void createUsersTable() {
+    public  void createUsersTable() {
         Statement statement = null;
 
         try  {
@@ -41,7 +41,7 @@ public class UserDaoJDBCImpl implements UserDao {
             Connection connection = Util.getConnection();
             System.out.println("Connected database successfully...");
             statement = connection.createStatement();
-            String sqlDrop = "DROP TABLE UsersTable";
+            String sqlDrop = "DROP TABLE IF EXISTS UsersTable";
             statement.executeUpdate(sqlDrop);
             System.out.println("DataBase is delete!");
         } catch (SQLException e) {
